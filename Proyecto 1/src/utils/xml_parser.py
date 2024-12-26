@@ -3,6 +3,8 @@ from utils.validations import Validator
 from models.stack import Stack
 from models.requester import Requester
 from models.artist import Artist
+from models.image_request import ImageRequest
+from global_state import requester_list
 
 
 class XMLParser:
@@ -64,9 +66,27 @@ class XMLParser:
                         specialties,
                         additional_notes,
                     )
-                    artist_list.append(new_artist)
+                    artist_list.insert(new_artist)
                 else:
                     print(f"Invalid artist {artist_id}, skipping...")
+
+        except ET.ParseError:
+            print(f"Error parsing XML file: {xml_path}")
+
+    @staticmethod
+    def load_figures(xml_path, logged_in_user_id):
+        try:
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+
+            request_id = ""
+            if root.tag == "figura":
+                for elementos in root:
+                    if elementos.tag == "nombre":
+                        request_id = elementos.attrib["id"]
+
+            new_request = ImageRequest(request_id, xml_path)
+            requester_list.insert_to_user_stack(logged_in_user_id, new_request)
 
         except ET.ParseError:
             print(f"Error parsing XML file: {xml_path}")
