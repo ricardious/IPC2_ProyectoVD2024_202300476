@@ -17,11 +17,9 @@ class Validator:
         if not re.match(pattern, requester_id):
             return False
 
-        current = requester_list.head
-        while current:
-            if current.data["id"] == requester_id:
+        for requester in requester_list:
+            if requester.requester_id == requester_id:
                 return False
-            current = current.next
 
         return True
 
@@ -31,10 +29,8 @@ class Validator:
         if not re.match(pattern, artist_id):
             return False
 
-        current = artist_list.head
-        while current:
-            if current.data["id"] == artist_id:
+        for artist in artist_list:
+            if artist.artist_id == artist_id:
                 return False
-            current = current.next
 
         return True
