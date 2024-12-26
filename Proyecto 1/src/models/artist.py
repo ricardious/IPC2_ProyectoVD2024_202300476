@@ -1,3 +1,6 @@
+from models.circular_linked_list import CircularLinkedList
+
+
 class Artist:
     def __init__(
         self, artist_id, pwd, full_name, email, phone, specialties, additional_notes
@@ -9,3 +12,7 @@ class Artist:
         self.phone = phone
         self.specialties = specialties
         self.additional_notes = additional_notes
+        self.processed_images = CircularLinkedList()
+
+    def insert_processed_image(self, value):
+        self.processed_images.insert(value)
