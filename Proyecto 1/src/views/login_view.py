@@ -40,8 +40,6 @@ class LoginView:
         )
         self.canvas.place(x=0, y=0)
 
-        self.artist_list = artist_list  # Listas globales
-        self.requester_list = requester_list  # Listas globales
         # Inicializar elementos
         self.create_background()
         self.create_entries()
@@ -287,20 +285,18 @@ class LoginView:
 
         # Verificar si el usuario es un Artista (que el ID comience con ART-)
         if username.startswith("ART-"):
-            usuario_artista = self.artist_list.search({"id": username, "pwd": password})
+            usuario_artista = artist_list.search(username, password)
             if usuario_artista is not None:
-                print(f"Login exitoso: Artista {usuario_artista['full_name']}")
+                print(f"Login exitoso: Artista {usuario_artista.full_name}")
                 self.window.destroy()  # Cierra la ventana de login
                 self.open_artist_window(usuario_artista)  # Abre la vista del artista
                 return
 
         # Verificar si el usuario es un Solicitante (que el ID comience con IPC-)
         if username.startswith("IPC-"):
-            usuario_solicitante = self.requester_list.search(
-                {"id": username, "pwd": password}
-            )
+            usuario_solicitante = requester_list.search(username, password)
             if usuario_solicitante is not None:
-                print(f"Login exitoso: Solicitante {usuario_solicitante['full_name']}")
+                print(f"Login exitoso: Solicitante {usuario_solicitante.full_name}")
                 self.window.destroy()  # Cierra la ventana de login
                 self.open_requester_window(
                     usuario_solicitante
@@ -318,18 +314,20 @@ class LoginView:
         admin_view.run()
 
     def open_artist_window(self, artista):
-        print(f"Abriendo ventana para el artista: {artista['full_name']}")
+        print(f"Abriendo ventana para el artista: {artista.full_name}")
         from views.artist_view import ArtistView
 
-        artist_view = ArtistView(artista)
+        artist_view = ArtistView(artist_id=artista.artist_id)
         artist_view.run()
 
     def open_requester_window(self, solicitante):
-        print(f"Abriendo ventana para el solicitante: {solicitante['full_name']}")
+        print(f"Abriendo ventana para el solicitante: {solicitante.full_name}")
         # Aquí iría la lógica para abrir la ventana del solicitante
         from views.requester_view import RequesterView
 
-        requester_view = RequesterView(solicitante)
+        requester_view = RequesterView(
+            user_id=solicitante.requester_id, pwd=solicitante.pwd
+        )
         requester_view.run()
 
     def run(self):
