@@ -27,6 +27,32 @@ debug/
 .DS_Store
 Thumbs.db
 
+# LaTeX builds
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+*.fdb_latexmk
+*.synctex(busy)
+*.synctex.gz
+*.pdfsync
+*.dvi
+*.nav
+*.snm
+*.vrb
+*.xdv
+
 # Other
 *.bak
 *.tmp
