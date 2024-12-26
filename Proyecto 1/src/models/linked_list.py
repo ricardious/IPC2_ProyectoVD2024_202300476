@@ -52,11 +52,26 @@ class LinkedList:
     def is_empty(self):
         return self.head is None
 
-    def search(self, data):
+    def search(self, artist_id, pwd):
         current = self.head
         while current:
-            if current.data["id"] == data["id"] and current.data["pwd"] == data["pwd"]:
-                return current.data  # Retorna el nodo encontrado
+            if (
+                hasattr(current.data, "artist_id")
+                and current.data.artist_id == artist_id
+                and current.data.pwd == pwd
+            ):
+                return current.data
+            current = current.next
+        return None
+
+    def search_by_id(self, artist_id):
+        current = self.head
+        while current:
+            if (
+                hasattr(current.data, "artist_id")
+                and current.data.artist_id == artist_id
+            ):
+                return current.data
             current = current.next
         return None
 
@@ -66,28 +81,36 @@ class LinkedList:
         dot = graphviz.Digraph(
             "ListaArtistas",
             filename=f"./Reportes/{filename}",
-            format="png",
+            format="svg",
             node_attr={"shape": "record", "style": "filled", "fillcolor": "lightgreen"},
         )
 
         current = self.head
         while current:
-            data = current.data
+            artist = current.data
             label = (
-                f"ID: {data['id']}\\n"
-                f"Nombre: {data['full_name']}\\n"
-                f"Email: {data['email']}\\n"
-                f"Teléfono: {data['phone']}\\n"
-                f"Especialidades: {data['specialties']}\\n"
-                f"Notas: {data['additional_notes']}"
+                f"ID: {artist.artist_id}\\n"
+                f"Nombre: {artist.full_name}\\n"
+                f"Email: {artist.email}\\n"
+                f"Teléfono: {artist.phone}\\n"
+                f"Especialidades: {artist.specialties}\\n"
+                f"Notas: {artist.additional_notes}"
             )
 
-            dot.node(data["id"], label)
+            dot.node(artist.artist_id, label)
 
             # Conexión al siguiente nodo
             if current.next:
-                dot.edge(data["id"], current.next.data["id"])
+                dot.edge(artist.artist_id, current.next.data.artist_id)
 
             current = current.next
 
         dot.render(cleanup=True)
+
+    def insert_processed(self, artist_id, processed_item):
+        current = self.head
+        while current:
+            if current.data.artist_id == artist_id:
+                current.data.processed.insert(processed_item)
+                break
+            current = current.next
