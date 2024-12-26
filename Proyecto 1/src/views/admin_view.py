@@ -16,10 +16,10 @@ from tkinter import (
     ttk,
 )
 from PIL import Image, ImageTk
-from global_state import artist_list, requester_list
 import cairosvg
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from global_state import artist_list, requester_list
 from utils.window_utils import center_window
 from utils.xml_parser import XMLParser
 from utils.graphviz_reports import GraphvizReports
@@ -68,11 +68,10 @@ class AdminView:
 
         # Cargar y preparar recursos
 
-        self.artist_list = artist_list  # Listas globales
-        self.requester_list = requester_list  # Listas globales
         self.load_images()
         self.create_buttons()
         self.create_images()
+        self.scroll_frame()
 
     def relative_to_assets(self, path: str) -> Path:
         """Convierte rutas relativas a la carpeta de assets"""
@@ -94,6 +93,9 @@ class AdminView:
         self.image_6 = PhotoImage(file=self.relative_to_assets("image_6.png"))
         self.image_7 = PhotoImage(file=self.relative_to_assets("image_7.png"))
         self.image_8 = PhotoImage(file=self.relative_to_assets("image_8.png"))
+        self.no_reports_image = PhotoImage(
+            file=self.relative_to_assets("No reports available.png")
+        )
 
     def create_buttons(self):
         """Crear todos los botones"""
@@ -129,7 +131,6 @@ class AdminView:
 
     def create_images(self):
         """Crear todas las imágenes en el canvas"""
-        self.create_scrollable_frame()
 
         image_positions = [
             (self.image_1, 190.0, 45.0),
@@ -145,26 +146,25 @@ class AdminView:
             image = self.canvas.create_image(x, y, image=image)
             self.canvas.tag_raise(image)
 
-    def create_scrollable_frame(self):
+    def scroll_frame(self):
         """Crear un frame con barras de desplazamiento"""
         # Adjust the position and size to fit between the specified images
         container_frame = Frame(self.window, bg="#4B0082", width=520, height=350)
 
         # Positioning the frame between image_4 (193.0, 186.0) and image_5 (411.0, 201.0)
         frame_id = self.canvas.create_window(
-            420.0,  # Centered between image_4 and image_5
-            225.0,  # Lowered to avoid overlapping with other images
+            685.0,  # Centered between image_4 and image_5
+            405.0,  # Lowered to avoid overlapping with other images
             window=container_frame,
             width=530,
             height=360,
-            anchor="nw",
+            anchor="center",
         )
 
         # Scrollbars personalizadas con ttk y estilo
         self.scrollbar_y = ttk.Scrollbar(
             container_frame, orient="vertical", style="Custom.Vertical.TScrollbar"
         )
-        self.scrollbar_y.pack(side="right", fill="y")
 
         self.scrollable_frame = Canvas(
             container_frame,
@@ -185,22 +185,28 @@ class AdminView:
 
         Label(
             self.inner_frame,
-            text="No content available",
-            font=("Helvetica", 16, "bold"),
+            text="No reports available",
+            font=("Pixelify Sans", 24),
             bg="#4B0082",
             fg="white",
             anchor="center",
-        ).pack(
-            expand=True, fill="both", pady=150, padx=150
-        )  # Usar 'expand' para centrar verticalmente
+        ).pack(expand=True, fill="both", pady=150, padx=100)
 
         self.inner_frame.update_idletasks()
         self.scrollable_frame.config(scrollregion=self.scrollable_frame.bbox("all"))
-
+        self.scrollable_frame.bind_all(
+            "<MouseWheel>", self.on_mouse_wheel
+        )  # Para Windows
+        self.scrollable_frame.bind_all(
+            "<Button-4>", self.on_mouse_wheel
+        )  # Para Linux y MacOS
+        self.scrollable_frame.bind_all(
+            "<Button-5>", self.on_mouse_wheel
+        )  # Para Linux y MacOS
         # Send the scrollable frame to the back
         self.canvas.tag_lower(frame_id)
 
-    def display_svg_in_scroll_frame(self, svg_path):
+    def show_report(self, svg_path):
         """Convertir un archivo SVG a PNG y mostrarlo en el centro del scrollable frame"""
         png_path = svg_path.replace(".svg", ".png")
         cairosvg.svg2png(url=svg_path, write_to=png_path)
@@ -233,6 +239,26 @@ class AdminView:
 
         # Actualizar el scrollregion para permitir el desplazamiento
         self.scrollable_frame.config(scrollregion=self.scrollable_frame.bbox("all"))
+        self.check_scrollbar_visibility()
+
+    def check_scrollbar_visibility(self):
+        """Verifica si la región de desplazamiento excede el tamaño del marco y muestra la scrollbar si es necesario."""
+        scrollable_region = self.scrollable_frame.bbox("all")  # Obtiene el área ocupada
+        frame_height = self.scrollable_frame.winfo_height()
+
+        if scrollable_region and scrollable_region[3] > frame_height:
+            self.scrollbar_y.pack(side="right", fill="y")  # Muestra la scrollbar
+        else:
+            self.scrollbar_y.pack_forget()  # Oculta la scrollbar si no es necesaria
+
+    def on_mouse_wheel(self, event):
+        """Desplazar el contenido de scrollable_frame con la rueda del mouse"""
+        if event.num == 4:  # Para sistemas Unix/Linux/MacOS
+            self.scrollable_frame.yview_scroll(-1, "units")
+        elif event.num == 5:  # Para sistemas Unix/Linux/MacOS
+            self.scrollable_frame.yview_scroll(1, "units")
+        else:  # Para Windows
+            self.scrollable_frame.yview_scroll(-1 * (event.delta // 120), "units")
 
     def load_requesters(self):
         files = filedialog.askopenfilenames(
@@ -240,7 +266,7 @@ class AdminView:
         )
 
         for file in files:
-            XMLParser.load_requesters(file, self.requester_list)
+            XMLParser.load_requesters(file, requester_list)
 
         messagebox.showinfo("Load Complete", f"{len(files)} requester files loaded")
 
@@ -250,32 +276,30 @@ class AdminView:
         )
 
         for file in files:
-            XMLParser.load_artists(file, self.artist_list)
+            XMLParser.load_artists(file, artist_list)
 
         messagebox.showinfo("Load Complete", f"{len(files)} artist files loaded")
 
     def requester_report(self):
-        if self.requester_list.is_empty():
+        if requester_list.is_empty():
             messagebox.showerror(
                 "Error", "No hay solicitantes para generar el reporte."
             )
             return
 
-        report_path = "./Reportes/ListaSolicitantes.svg"
-        self.requester_list.generate_report(report_path)
-        self.display_svg_in_scroll_frame(report_path)
+        requester_list.generate_report("ListaSolicitantes")
+        self.show_report("./Reportes/ListaSolicitantes.svg")
         messagebox.showinfo(
             "Reporte generado", "El reporte de solicitantes ha sido generado."
         )
 
     def artist_report(self):
-        if self.artist_list.is_empty():
+        if artist_list.is_empty():
             messagebox.showerror("Error", "No hay artistas para generar el reporte.")
             return
 
-        report_path = "./Reportes/ListaArtistas.svg"
-        self.artist_list.generate_report(report_path)
-        self.display_svg_in_scroll_frame(report_path)
+        artist_list.generate_report("ListaArtistas")
+        self.show_report("./Reportes/ListaArtistas.svg")
         messagebox.showinfo(
             "Reporte generado", "El reporte de artistas ha sido generado."
         )
