@@ -59,11 +59,15 @@ class DoublyLinkedList:
         """Check if the list is empty."""
         return self.head is None
 
-    def search(self, data):
+    def search(self, requester_id, pwd):
         current = self.head
         while current:
-            if current.data["id"] == data["id"] and current.data["pwd"] == data["pwd"]:
-                return current.data  # Retorna el nodo encontrado
+            if (
+                hasattr(current.data, "requester_id")
+                and current.data.requester_id == requester_id
+                and current.data.pwd == pwd
+            ):
+                return current.data
             current = current.next
         return None
 
@@ -73,32 +77,37 @@ class DoublyLinkedList:
         dot = graphviz.Digraph(
             "ListaSolicitantes",
             filename=f"./Reportes/{filename}",
-            format="png",
+            format="svg",
             node_attr={"shape": "record", "style": "filled", "fillcolor": "lightblue"},
         )
 
         current = self.head
         while current:
-            data = current.data
+            # Acceder a los atributos del objeto en lugar de las claves del diccionario
+            requester = current.data
             label = (
-                f"ID: {data['id']}\\n"
-                f"Nombre: {data['full_name']}\\n"
-                f"Email: {data['email']}\\n"
-                f"Teléfono: {data['phone']}\\n"
-                f"Dirección: {data['address']}"
+                f"ID: {requester.requester_id}\\n"
+                f"Nombre: {requester.full_name}\\n"
+                f"Email: {requester.email}\\n"
+                f"Teléfono: {requester.phone}\\n"
+                f"Dirección: {requester.address}"
             )
 
-            dot.node(data["id"], label)
+            dot.node(requester.requester_id, label)
 
             # Conexión al siguiente nodo
             if current.next:
-                dot.edge(current.data["id"], current.next.data["id"], color="blue")
+                dot.edge(
+                    current.data.requester_id,
+                    current.next.data.requester_id,
+                    color="blue",
+                )
 
             # Conexión al nodo anterior
             if current.prev:
                 dot.edge(
-                    current.data["id"],
-                    current.prev.data["id"],
+                    current.data.requester_id,
+                    current.prev.data.requester_id,
                     color="red",
                     style="dashed",
                 )
@@ -106,3 +115,32 @@ class DoublyLinkedList:
             current = current.next
 
         dot.render(cleanup=True)
+
+    def insert_to_user_stack(self, requester_id, value):
+        """Insert a value into the stack of a specific user."""
+        current = self.head
+        while current:
+            if current.data.requester_id == requester_id:
+                current.data.push_stack(value)
+                break
+            current = current.next
+
+    def pop_from_user_stack(self, requester_id):
+        """Remove and return the top value from a specific user's stack."""
+        current = self.head
+        while current:
+            if current.data.requester_id == requester_id:
+                if current.data.cart_stack.isEmpty():
+                    return None
+                return current.data.pop_stack()
+            current = current.next
+        return None
+
+    def insert_user_image(self, requester_id, image):
+        """Insert an image for a specific user."""
+        current = self.head
+        while current:
+            if current.data.requester_id == requester_id:
+                current.data.insert_image(image)
+                break
+            current = current.next
