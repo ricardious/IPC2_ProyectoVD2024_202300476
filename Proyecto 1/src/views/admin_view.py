@@ -93,9 +93,6 @@ class AdminView:
         self.image_6 = PhotoImage(file=self.relative_to_assets("image_6.png"))
         self.image_7 = PhotoImage(file=self.relative_to_assets("image_7.png"))
         self.image_8 = PhotoImage(file=self.relative_to_assets("image_8.png"))
-        self.no_reports_image = PhotoImage(
-            file=self.relative_to_assets("No reports available.png")
-        )
 
     def create_buttons(self):
         """Crear todos los botones"""
